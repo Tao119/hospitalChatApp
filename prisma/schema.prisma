@@ -1,0 +1,171 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id            String    @id @default(cuid())
+  name          String
+  code          String    @unique // 病院コード
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  users         User[]
+  patients      Patient[]
+  wards         Ward[]
+}
+
+model Ward {
+  id              String    @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name            String
+  code            String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  patients        Patient[]
+  
+  @@unique([organizationId, code])
+}
+
+model User {
+  id              String    @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email           String    @unique
+  name            String
+  password        String
+  role            UserRole  @default(NURSE)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  messages        Message[]
+  channelMembers  ChannelMember[]
+  readReceipts    ReadReceipt[]
+  mentions        Mention[]
+}
+
+enum UserRole {
+  SUPER_ADMIN   // プロバイダー管理者
+  ADMIN         // 病院管理者
+  DOCTOR
+  NURSE
+  PHARMACIST
+  CARE_MANAGER
+}
+
+model Patient {
+  id              String    @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  wardId          String?
+  ward            Ward?     @relation(fields: [wardId], references: [id], onDelete: SetNull)
+  patientId       String
+  name            String
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  channel         Channel?
+  
+  @@unique([organizationId, patientId])
+}
+
+model Channel {
+  id            String    @id @default(cuid())
+  patientId     String    @unique
+  patient       Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  isArchived    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  members       ChannelMember[]
+  threads       Thread[]
+}
+
+model ChannelMember {
+  id            String    @id @default(cuid())
+  channelId     String
+  userId        String
+  channel       Channel   @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt      DateTime  @default(now())
+  
+  @@unique([channelId, userId])
+}
+
+model Thread {
+  id            String    @id @default(cuid())
+  channelId     String
+  channel       Channel   @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  title         String
+  isActive      Boolean   @default(true)
+  priority      Priority  @default(NORMAL)
+  tags          String[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  messages      Message[]
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model Message {
+  id            String    @id @default(cuid())
+  threadId      String
+  thread        Thread    @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content       String
+  type          MessageType @default(TEXT)
+  fileUrl       String?
+  isEdited      Boolean   @default(false)
+  isDeleted     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  readReceipts  ReadReceipt[]
+  mentions      Mention[]
+}
+
+enum MessageType {
+  TEXT
+  FILE
+  IMAGE
+  TODO
+  PAGE
+}
+
+model ReadReceipt {
+  id            String    @id @default(cuid())
+  messageId     String
+  message       Message   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt        DateTime  @default(now())
+  
+  @@unique([messageId, userId])
+}
+
+model Mention {
+  id            String    @id @default(cuid())
+  messageId     String
+  message       Message   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isRead        Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  
+  @@unique([messageId, userId])
+}

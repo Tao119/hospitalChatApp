@@ -1,0 +1,21 @@
+# WebSocketサーバー用のDockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+# package.jsonとpackage-lock.jsonをコピー
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# 依存関係をインストール
+RUN npm ci
+
+# Prisma Clientを生成
+RUN npx prisma generate
+
+# ソースコードをコピー
+COPY . .
+
+EXPOSE 3001
+
+CMD ["npm", "run", "ws:dev"]
