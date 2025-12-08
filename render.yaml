@@ -3,7 +3,7 @@ services:
   - type: web
     name: hospital-chat-app
     env: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./Dockerfile.render
     plan: free
     region: oregon
     envVars:
