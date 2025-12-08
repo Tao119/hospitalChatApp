@@ -4,7 +4,7 @@ const next = require("next");
 const { WebSocketServer } = require("ws");
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = process.env.HOSTNAME || "0.0.0.0";
+const hostname = dev ? "localhost" : "0.0.0.0";
 const port = parseInt(process.env.PORT || "3000", 10);
 
 const app = next({ dev, hostname, port });
@@ -13,6 +13,11 @@ const handle = app.getRequestHandler();
 app.prepare().then(() => {
   const server = createServer(async (req, res) => {
     try {
+      // WebSocketのアップグレードリクエストは無視
+      if (req.headers.upgrade === "websocket") {
+        return;
+      }
+
       const parsedUrl = parse(req.url, true);
       await handle(req, res, parsedUrl);
     } catch (err) {
