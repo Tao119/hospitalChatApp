@@ -2,6 +2,9 @@
 
 Discord 風の UI を持つ院内用リアルタイムチャットアプリケーション
 
+[![GitHub](https://img.shields.io/badge/GitHub-Tao119%2FhospitalChatApp-blue?logo=github)](https://github.com/Tao119/hospitalChatApp)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 ## 🎯 MVP（Ver.0.1）完成！
 
 すべての必須機能が実装され、デモ実行の準備が整っています。
