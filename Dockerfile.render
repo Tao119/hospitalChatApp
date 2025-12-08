@@ -1,4 +1,4 @@
-# Render用のDockerfile（データベース待機なし）
+# Render用のDockerfile（Next.js + WebSocket統合版）
 FROM node:20-alpine
 
 WORKDIR /app
@@ -28,5 +28,5 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 ENV NODE_ENV=production
 
-# マイグレーションを実行してからアプリを起動
+# マイグレーション実行後、統合サーバーを起動
 CMD npx prisma migrate deploy && npm start

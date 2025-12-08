@@ -12,7 +12,11 @@ export function useWebSocket(userId?: string) {
             return
         }
 
-        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001'
+        // 本番環境では同じドメインの/wsパスを使用、開発環境ではlocalhost:3001
+        const wsUrl = process.env.NEXT_PUBLIC_WS_URL ||
+            (typeof window !== 'undefined' && window.location.origin.includes('localhost')
+                ? 'ws://localhost:3001'
+                : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`)
         const ws = new WebSocket(`${wsUrl}?userId=${userId}`)
 
         ws.onopen = () => {
