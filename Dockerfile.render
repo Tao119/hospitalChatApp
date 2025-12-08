@@ -28,5 +28,5 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 ENV NODE_ENV=production
 
-# マイグレーション実行後、統合サーバーを起動
-CMD npx prisma migrate deploy && npm start
+# マイグレーション実行後、統合サーバーを起動（本番用）
+CMD npx prisma migrate deploy && npm run start:prod
