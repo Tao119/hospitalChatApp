@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
@@ -8,12 +6,8 @@ const prisma = new PrismaClient()
 
 export async function POST(request: Request) {
     try {
-        // 認証チェック（本番環境では必須）
-        const session = await getServerSession(authOptions)
-
-        // 開発環境またはスーパー管理者のみ許可
-        if (process.env.NODE_ENV === 'production' && session?.user?.role !== 'SUPER_ADMIN') {
-            // 本番環境では特別なシークレットキーが必要
+        // 本番環境では特別なシークレットキーが必要
+        if (process.env.NODE_ENV === 'production') {
             const { secret } = await request.json()
             if (secret !== process.env.SEED_SECRET) {
                 return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -36,7 +30,7 @@ export async function POST(request: Request) {
         const providerOrg = await prisma.organization.create({
             data: {
                 name: 'システムプロバイダー',
-                type: 'PROVIDER',
+                code: 'PROVIDER001',
             },
         })
 
@@ -58,7 +52,7 @@ export async function POST(request: Request) {
         const hospital1 = await prisma.organization.create({
             data: {
                 name: '総合病院A',
-                type: 'HOSPITAL',
+                code: 'HOSP001',
             },
         })
 
@@ -66,6 +60,7 @@ export async function POST(request: Request) {
         const ward1 = await prisma.ward.create({
             data: {
                 name: '内科病棟',
+                code: 'WARD001',
                 organizationId: hospital1.id,
             },
         })
@@ -73,6 +68,7 @@ export async function POST(request: Request) {
         const ward2 = await prisma.ward.create({
             data: {
                 name: '外科病棟',
+                code: 'WARD002',
                 organizationId: hospital1.id,
             },
         })
@@ -95,7 +91,6 @@ export async function POST(request: Request) {
                 password: hashedPassword,
                 role: 'NURSE',
                 organizationId: hospital1.id,
-                wardId: ward1.id,
             },
         })
 
@@ -106,7 +101,6 @@ export async function POST(request: Request) {
                 password: hashedPassword,
                 role: 'NURSE',
                 organizationId: hospital1.id,
-                wardId: ward1.id,
             },
         })
 
@@ -117,7 +111,6 @@ export async function POST(request: Request) {
                 password: hashedPassword,
                 role: 'DOCTOR',
                 organizationId: hospital1.id,
-                wardId: ward1.id,
             },
         })
 
@@ -126,9 +119,8 @@ export async function POST(request: Request) {
         // 患者を作成
         const patient1 = await prisma.patient.create({
             data: {
-                patientNumber: 'P001',
+                patientId: 'P001',
                 name: '患者 一郎',
-                dateOfBirth: new Date('1980-01-01'),
                 organizationId: hospital1.id,
                 wardId: ward1.id,
             },
@@ -136,9 +128,8 @@ export async function POST(request: Request) {
 
         const patient2 = await prisma.patient.create({
             data: {
-                patientNumber: 'P002',
+                patientId: 'P002',
                 name: '患者 二郎',
-                dateOfBirth: new Date('1990-05-15'),
                 organizationId: hospital1.id,
                 wardId: ward1.id,
             },
@@ -146,23 +137,16 @@ export async function POST(request: Request) {
 
         console.log('Hospital 1 patients created')
 
-        // チャンネルを作成
+        // チャンネルを作成（患者ごとに1つ）
         const channel1 = await prisma.channel.create({
             data: {
-                name: '内科病棟 全体',
-                organizationId: hospital1.id,
-                wardId: ward1.id,
-                createdById: admin1.id,
+                patientId: patient1.id,
             },
         })
 
         const channel2 = await prisma.channel.create({
             data: {
-                name: '患者 一郎 ケア',
-                organizationId: hospital1.id,
-                wardId: ward1.id,
-                patientId: patient1.id,
-                createdById: nurse1.id,
+                patientId: patient2.id,
             },
         })
 
@@ -186,7 +170,6 @@ export async function POST(request: Request) {
             data: {
                 channelId: channel1.id,
                 title: '申し送り事項',
-                createdById: nurse1.id,
             },
         })
 
@@ -194,7 +177,6 @@ export async function POST(request: Request) {
             data: {
                 content: '本日の申し送り事項です。患者様の状態は安定しています。',
                 threadId: thread1.id,
-                channelId: channel1.id,
                 userId: nurse1.id,
             },
         })
@@ -203,7 +185,6 @@ export async function POST(request: Request) {
             data: {
                 content: '了解しました。引き続き観察を続けます。',
                 threadId: thread1.id,
-                channelId: channel1.id,
                 userId: nurse2.id,
             },
         })
@@ -212,7 +193,6 @@ export async function POST(request: Request) {
             data: {
                 channelId: channel2.id,
                 title: 'バイタルサイン記録',
-                createdById: nurse1.id,
             },
         })
 
@@ -220,7 +200,6 @@ export async function POST(request: Request) {
             data: {
                 content: '体温37.2度、血圧120/80、脈拍72回/分',
                 threadId: thread2.id,
-                channelId: channel2.id,
                 userId: nurse1.id,
             },
         })
@@ -231,7 +210,7 @@ export async function POST(request: Request) {
         const hospital2 = await prisma.organization.create({
             data: {
                 name: '総合病院B',
-                type: 'HOSPITAL',
+                code: 'HOSP002',
             },
         })
 
