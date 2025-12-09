@@ -11,8 +11,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # 依存関係をインストール（ビルドにdevDependenciesが必要）
-RUN npm ci && \
-    npm cache clean --force
+RUN npm ci
 
 # Prisma Clientを生成
 RUN npx prisma generate
@@ -24,9 +23,15 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-# 本番用依存関係のみ再インストール
-RUN npm ci --only=production && \
+# ビルド成果物を確認
+RUN ls -la .next && echo "Build completed successfully"
+
+# ビルド後、devDependenciesを削除してイメージサイズを削減
+RUN npm prune --production && \
     npm cache clean --force
+
+# ビルド成果物が残っているか確認
+RUN ls -la .next && echo "Build artifacts preserved after prune"
 
 # 不要なファイルを削除
 RUN rm -rf .git .github docs
