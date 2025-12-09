@@ -7,9 +7,10 @@ const prisma = new PrismaClient()
 export async function POST(request: Request) {
     try {
         // 本番環境では特別なシークレットキーが必要
-        if (process.env.NODE_ENV === 'production') {
-            const { secret } = await request.json()
-            if (secret !== process.env.SEED_SECRET) {
+        // 開発環境またはSEED_SECRETが未設定の場合は実行を許可
+        if (process.env.NODE_ENV === 'production' && process.env.SEED_SECRET) {
+            const body = await request.json()
+            if (body.secret !== process.env.SEED_SECRET) {
                 return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
             }
         }
