@@ -4,8 +4,11 @@ const next = require("next");
 const { WebSocketServer } = require("ws");
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = dev ? "localhost" : "0.0.0.0";
+const hostname = process.env.HOSTNAME || (dev ? "localhost" : "0.0.0.0");
 const port = parseInt(process.env.PORT || "3000", 10);
+
+console.log(`Starting server in ${dev ? "development" : "production"} mode`);
+console.log(`Hostname: ${hostname}, Port: ${port}`);
 
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
@@ -153,5 +156,7 @@ app.prepare().then(() => {
     if (err) throw err;
     console.log(`> Ready on http://${hostname}:${port}`);
     console.log(`> WebSocket server ready on ws://${hostname}:${port}/ws`);
+    console.log(`> Environment: ${process.env.NODE_ENV}`);
+    console.log(`> Connected clients will be tracked`);
   });
 });

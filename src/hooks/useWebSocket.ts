@@ -12,11 +12,25 @@ export function useWebSocket(userId?: string) {
             return
         }
 
-        // 本番環境では同じドメインの/wsパスを使用、開発環境ではlocalhost:3001
-        const wsUrl = process.env.NEXT_PUBLIC_WS_URL ||
-            (typeof window !== 'undefined' && window.location.origin.includes('localhost')
-                ? 'ws://localhost:3001'
-                : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`)
+        // WebSocket URLの決定ロジック
+        let wsUrl: string
+
+        if (typeof window !== 'undefined') {
+            // 開発環境：localhost:3001の独立WebSocketサーバー
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                wsUrl = 'ws://localhost:3001'
+            }
+            // 本番環境：同じサーバーの/wsパス
+            else {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+                wsUrl = `${protocol}//${window.location.host}/ws`
+            }
+        } else {
+            // サーバーサイドレンダリング時のフォールバック
+            wsUrl = 'ws://localhost:3001'
+        }
+
+        console.log('Connecting to WebSocket:', wsUrl)
         const ws = new WebSocket(`${wsUrl}?userId=${userId}`)
 
         ws.onopen = () => {

@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
-  // Docker本番環境用
+  // カスタムサーバー（server.js）を使用するため、standaloneは無効化
   // output: 'standalone',
 };
 

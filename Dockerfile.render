@@ -4,14 +4,15 @@ FROM node:20-alpine
 WORKDIR /app
 
 # 必要なパッケージをインストール
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl libc6-compat
 
 # package.jsonとpackage-lock.jsonをコピー
 COPY package*.json ./
 COPY prisma ./prisma/
 
 # 依存関係をインストール
-RUN npm ci
+RUN npm ci --only=production && \
+    npm cache clean --force
 
 # Prisma Clientを生成
 RUN npx prisma generate
@@ -20,7 +21,11 @@ RUN npx prisma generate
 COPY . .
 
 # Next.jsをビルド
+ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
+
+# 不要なファイルを削除
+RUN rm -rf .git .github docs
 
 EXPOSE 3000
 
@@ -28,5 +33,9 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 ENV NODE_ENV=production
 
-# マイグレーション実行後、統合サーバーを起動（本番用）
-CMD npx prisma migrate deploy && npm run start:prod
+# ヘルスチェック
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
+  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+# マイグレーション実行後、統合サーバーを起動
+CMD npx prisma migrate deploy && node server.js

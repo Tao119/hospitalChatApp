@@ -83,7 +83,18 @@ export default function ChatPage() {
     const loadChannels = async () => {
         try {
             const res = await fetch('/api/channels')
+            if (!res.ok) {
+                throw new Error(`Failed to fetch channels: ${res.status}`)
+            }
             const data = await res.json()
+
+            // データが配列であることを確認
+            if (!Array.isArray(data)) {
+                console.error('Channels data is not an array:', data)
+                setChannels([])
+                return
+            }
+
             setChannels(data)
 
             if (data.length > 0 && !selectedChannelId) {
@@ -211,7 +222,7 @@ export default function ChatPage() {
         )
     }
 
-    const selectedChannel = channels.find(c => c.id === selectedChannelId)
+    const selectedChannel = Array.isArray(channels) ? channels.find(c => c.id === selectedChannelId) : undefined
 
     return (
         <div className="h-screen flex">
